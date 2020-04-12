@@ -36,9 +36,8 @@ describe('Backend Websocket Tests', () => {
 
 it('Loads demo page and sends message', () => {
     const testMessage = 'Test message 2'
-    // cy.spy(window, 'onopen', (stream) => {
-    //     console.log('WS connected!');
-    //   })
+    const modifiedMessage = 'Modified message'
+
     cy.visit(url).then(window => {
 
         // Connection opened
@@ -46,15 +45,30 @@ it('Loads demo page and sends message', () => {
         // cy.stub(win, 'onOpen', evt => {
         //     console.log("WebSocket is re open now.")
         // })
+        console.log('orig func', window.onMessage.toString())
+
+
+        let funcBodyString = window.onMessage.toString()
+            // Remove enclosing braces    
+            .match(/{([\s\S]*)}/)[1]
+
+            // Modify returned string
+            .replace('evt.data', '`${modifiedMessage}`')
+
+            // Add window reference to log element call
+            .replace('logElementToConsole', 'window.logElementToConsole')
+
+        // let onMessage
+        eval(`window.onMessage = function onMessage(evt) { ${funcBodyString} }`)
 
         // Listen for messages
         cy.spy(window, 'onMessage')
-        // cy.stub(win, 'onMessage', evt => {
-        //     console.log('NO MESSAGE')
-        // })
+        // cy.stub(window, 'onMessage', window.onMessage)
 
-        cy.get('#connect').click()
     })
+
+
+    cy.get('#connect').click()
 
     // Assert that the connection is open and ready to communicate. 
     cy.window().should(win => {
@@ -66,6 +80,6 @@ it('Loads demo page and sends message', () => {
         // Assert that onMessage is called 
         cy.window().its('onMessage').should('be.called')
 
-        cy.get('#consoleLog').contains(`RECEIVED: ${testMessage}`)
+        cy.get('#consoleLog').contains(`RECEIVED: ${modifiedMessage}`)
     })
 })
