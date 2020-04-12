@@ -39,28 +39,36 @@ it('Loads demo page and sends message', () => {
     // cy.spy(window, 'onopen', (stream) => {
     //     console.log('WS connected!');
     //   })
-    cy.visit(url)
-        .then(window => {
-            cy.get('#connect').click()
-                .then(() => {
-                    cy.spy(window.websocket, 'send')
+    cy.visit(url).then(window => {
 
-                    cy.wrap(window.websocket)
-                    
+        // Connection opened
+        cy.spy(window, 'onOpen')
+        // cy.stub(win, 'onOpen', evt => {
+        //     console.log("WebSocket is re open now.")
+        // })
 
-                    const websocket = window.websocket
+        // Listen for messages
+        cy.spy(window, 'onMessage')
+        // cy.stub(win, 'onMessage', evt => {
+        //     console.log('NO MESSAGE')
+        // })
 
-                    // Connection opened
-                    websocket.onopen = function (event) {
-                        console.log("WebSocket is open now.");
-                        websocket.send(testMessage);
-                    }
+        cy.get('#connect').click()
 
-                    // Listen for incoming message
-                    // websocket.onmessage = function (event) {
-                    //     // console.log(event.data)
-                    // }
-                })
-            // cy.get('#consoleLog').contains(`RECEIVED: ${testMessage}`)
+        // Assert that the connection is open and ready to communicate. 
+        cy.log('Checking ready state...')
+
+        cy.wrap(window).should(win => {
+            expect(win.websocket.readyState).to.eq(1)
+        }).then(() => {
+            cy.log('Sending message...')
+            cy.wrap(window.websocket.send(testMessage)).as('SendMessage')
+            cy.wrap(window.websocket.worker).as('Worker')
+
+        }).then(() => {
+
+            cy.get('#consoleLog').contains(`RECEIVED: ${testMessage}`)
+
         })
+    })
 })
