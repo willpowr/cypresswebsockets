@@ -54,21 +54,18 @@ it('Loads demo page and sends message', () => {
         // })
 
         cy.get('#connect').click()
+    })
 
-        // Assert that the connection is open and ready to communicate. 
-        cy.log('Checking ready state...')
+    // Assert that the connection is open and ready to communicate. 
+    cy.window().should(win => {
+        expect(win.websocket.readyState).to.eq(1)
 
-        cy.wrap(window).should(win => {
-            expect(win.websocket.readyState).to.eq(1)
-        }).then(() => {
-            cy.log('Sending message...')
-            cy.wrap(window.websocket.send(testMessage)).as('SendMessage')
-            cy.wrap(window.websocket.worker).as('Worker')
+    }).then(win => {
+        cy.wrap(win.websocket.send(testMessage))
 
-        }).then(() => {
+        // Assert that onMessage is called 
+        cy.window().its('onMessage').should('be.called')
 
-            cy.get('#consoleLog').contains(`RECEIVED: ${testMessage}`)
-
-        })
+        cy.get('#consoleLog').contains(`RECEIVED: ${testMessage}`)
     })
 })
