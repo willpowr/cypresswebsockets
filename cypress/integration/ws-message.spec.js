@@ -71,11 +71,10 @@ it('Loads demo page and sends message', () => {
     cy.get('#connect').click()
 
     // Assert that the connection is open and ready to communicate. 
-    cy.window().should(win => {
-        expect(win.websocket.readyState).to.eq(1)
-
-    }).then(win => {
-        cy.wrap(win.websocket.send(testMessage))
+    cy.window({ timeout: 10000 }).should(window => {
+        expect(window.websocket.readyState).to.eq(1)
+    }).then(window => {
+        cy.wrap(window.websocket.send(testMessage))
 
         // Assert that onMessage is called 
         cy.window().its('onMessage').should('be.called')
