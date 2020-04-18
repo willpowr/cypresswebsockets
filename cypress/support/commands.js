@@ -23,3 +23,52 @@
 //
 // -- This will overwrite an existing command --
 // Cypress.Commands.overwrite("visit", (originalFn, url, options) => { ... })
+
+
+// Create object containing dummy spy functions
+const dummySpies = {
+    onOpen() { },
+    onMessage() { }
+}
+
+function connectWebSocket(wsUri) {
+
+    // Create the spy
+    cy.spy(dummySpies, 'onOpen').as('onOpenSpy')
+
+    // Create WebSocket connection.
+    const websocket = new WebSocket(wsUri)
+
+    // An event listener to be called when the connection is opened
+    websocket.onopen = function () {
+        console.log("WebSocket is open now.")
+
+        // Call the spied on dummy method
+        dummySpies.onOpen()
+    }
+
+    // An event listener to be called when a message is received from the server.
+    websocket.onmessage = function (event) {
+        console.log("Message received")
+
+        // Call the spied on dummy method
+        dummySpies.onMessage(event)
+    }
+
+    // Yield the websocket object
+    return (websocket)
+
+}
+
+function sendMessage(websocket, testMessage) {
+
+    // Create the spy
+    cy.spy(dummySpies, 'onMessage').as('onMessageSpy')
+
+    // Send a message to the server
+    websocket.send(testMessage)
+
+}
+
+Cypress.Commands.add("connectWebSocket", connectWebSocket)
+Cypress.Commands.add("sendMessage", sendMessage)

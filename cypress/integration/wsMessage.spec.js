@@ -1,17 +1,18 @@
 
-
 describe('Backend Websocket Tests', () => {
     const wsUri = "wss://echo.websocket.org/?encoding=text"
 
-    // Create object containing spy functions
-    const spy = {
+    // Create object containing dummy spy functions
+    const dummySpies = {
         onOpen() { },
         onMessage() { }
     }
 
     function connectWebSocket(wsUri) {
         return new Promise(resolve => {
-            cy.spy(spy, 'onOpen').as('onOpenSpy')
+            
+            // Create the spy
+            cy.spy(dummySpies, 'onOpen').as('onOpenSpy')
 
             // Create WebSocket connection.
             const websocket = new WebSocket(wsUri)
@@ -20,16 +21,16 @@ describe('Backend Websocket Tests', () => {
             websocket.onopen = function () {
                 console.log("WebSocket is open now.")
 
-                // Call the spied on method
-                spy.onOpen()
+                // Call the spied on dummy method
+                dummySpies.onOpen()
             }
 
             // An event listener to be called when a message is received from the server.
             websocket.onmessage = function (event) {
                 console.log("Message received")
 
-                // Call the spied on method
-                spy.onMessage(event)
+                // Call the spied on dummy method
+                dummySpies.onMessage(event)
             }
 
             cy.get('@onOpenSpy', { timeout: 10000 })
@@ -37,6 +38,8 @@ describe('Backend Websocket Tests', () => {
 
                     // Assert that the spy has been called
                     expect(onOpenSpy).to.be.called
+
+                    // Yield the websocket object
                     resolve(websocket)
                 })
         })
@@ -44,8 +47,11 @@ describe('Backend Websocket Tests', () => {
 
     function sendMessage(websocket, testMessage) {
         return new Promise(resolve => {
-            cy.spy(spy, 'onMessage').as('onMessageSpy')
+            
+            // Create the spy
+            cy.spy(dummySpies, 'onMessage').as('onMessageSpy')
 
+            // Send a message to the server
             websocket.send(testMessage)
 
             cy.get('@onMessageSpy')
@@ -53,6 +59,8 @@ describe('Backend Websocket Tests', () => {
 
                     // Assert that the spy has been called
                     expect(onMessageSpy).to.be.called
+                    
+                    // Yield the message event data passed to the stub
                     resolve(onMessageSpy.args[0][0])
                 })
         })
@@ -65,6 +73,7 @@ describe('Backend Websocket Tests', () => {
             .then(websocket => {
                 sendMessage(websocket, testMessage)
                     .then(messageEvent => {
+                        
                         // Assert that the message from the server matches the original
                         expect(messageEvent.data).to.equal(testMessage)
                     })
@@ -75,21 +84,19 @@ describe('Backend Websocket Tests', () => {
 describe('Frontend Websocket Tests', () => {
     const url = 'https://www.websocket.org/echo.html'
 
-    it.skip('Loads demo page and sends message', () => {
+    it('Loads demo page, sends a message and displays modified message', () => {
         const testMessage = 'Test message 2'
         const modifiedMessage = 'Modified message'
 
-        cy.visit(url).then(window => {
+        cy.visit(url)
+        .then(window => {
 
             // Connection opened
             cy.spy(window, 'onOpen')
-            // cy.stub(win, 'onOpen', evt => {
-            //     console.log("WebSocket is re open now.")
-            // })
-            console.log('orig func', window.onMessage.toString())
 
             // Modify the app's onmessage handler
             let funcBodyString = window.onMessage.toString()
+                
                 // Remove enclosing braces    
                 .match(/{([\s\S]*)}/)[1]
 
@@ -104,7 +111,6 @@ describe('Frontend Websocket Tests', () => {
 
             // Listen for messages
             cy.spy(window, 'onMessage')
-            // cy.stub(window, 'onMessage', window.onMessage)
 
         })
 
@@ -117,7 +123,9 @@ describe('Frontend Websocket Tests', () => {
                 expect(window.websocket.readyState).to.eq(1)
             })
             .then(window => {
-                cy.wrap(window.websocket.send(testMessage))
+                
+                // Send a message to the server
+                window.websocket.send(testMessage)
 
                 // Assert that onMessage is called 
                 cy.window().its('onMessage').should('be.called')
