@@ -43,7 +43,7 @@ function connectWebSocket(wsUri) {
     websocket.onopen = function () {
         console.log("WebSocket is open now.")
 
-        // Call the spied on dummy method
+        // Call the spied on dummy onOpen method
         dummySpies.onOpen()
     }
 
@@ -55,7 +55,6 @@ function connectWebSocket(wsUri) {
         dummySpies.onMessage(event)
     }
 
-    // Yield the websocket object
     return (websocket)
 
 }
